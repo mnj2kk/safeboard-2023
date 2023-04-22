@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Body
+from fastapi.responses import PlainTextResponse
 from .process_handler import ProcessHandler
 from threading import Thread
 
@@ -14,12 +15,14 @@ process_thread = update_thread()
 @app.get("/api/sleep_process")
 async def get_status():
     return 'Procces is running.' if process.status() else 'Process is not running.'
+get_status.__doc__ = "GET /api/sleep_process request (curl -X GET 0.0.0.0:80/api/sleep_process) to check the status of the process."
 
 @app.get("/api/sleep_process/result")
 async def get_result():
     if process.last_status == -1:
         return '404 Not Found'
     return process.last_status
+get_result.__doc__ = "GET /api/sleep_process/result (curl -X GET 0.0.0.0:80/api/sleep_process/result) to check last return code of the proces."
 
 @app.post("/api/sleep_process")
 async def update_process(body: str = Body(...)):
@@ -39,3 +42,8 @@ async def update_process(body: str = Body(...)):
             return 'Process stopped.'
         case _:
             return 'Invalid body %s, for POST /api/sleep_process.' % body
+update_process.__doc__ = "POST {body} /api/sleep_process (curl -X POST -d \"body\" 0.0.0.0:80/api/sleep_process) to update process status (stop or start)."
+
+@app.get("/api/docs", response_class=PlainTextResponse)
+async def docs():
+    return "{}\n{}\n{}".format(get_status.__doc__, get_result.__doc__, update_process.__doc__)
